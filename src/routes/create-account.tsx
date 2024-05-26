@@ -3,6 +3,16 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { FirebaseError } from "firebase/app";
+
+interface ErrorMessages {
+  [key: string]: string;
+}
+
+const errors: ErrorMessages = {
+  "auth/email-already-in-use": "That email already exists.",
+  "auth/weak-password": "Password should be at least 6 characters",
+};
 
 const Wrapper = styled.div`
   height: 100%;
@@ -19,6 +29,7 @@ const Title = styled.h1`
 
 const Form = styled.form`
   margin-top: 50px;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -48,7 +59,6 @@ const Error = styled.span`
 `;
 
 export default function CreateAccount() {
-  // react-route-dom
   const navigate = useNavigate();
   const [isLoading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -70,22 +80,23 @@ export default function CreateAccount() {
   };
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
     if (isLoading || name === "" || email === "" || password === "") return;
     try {
       setLoading(true);
-      // 1. create user
       const credentials = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
       console.log(credentials); // operationType, providerId, user
-      // 2. update user profile
       await updateProfile(credentials.user, { displayName: name });
-      // 3. go to home
       navigate("/");
     } catch (e) {
-      // setError
+      if (e instanceof FirebaseError) {
+        console.log(e.code, e.message);
+        setError(errors[e.code]);
+      }
     } finally {
       setLoading(false);
     }

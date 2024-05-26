@@ -9,11 +9,18 @@ import reset from "styled-reset";
 import { useEffect, useState } from "react";
 import LoadingScreen from "./components/loading-screen";
 import { auth } from "./firebase";
+import ProtectedRoute from "./components/protected-route";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
+    element: (
+      // ProtectedRoute를 통해 로그인되지 않은 사용자는 접근할 수 없도록 함
+      <ProtectedRoute>
+        {/* Layout이 children인 Home과 Profile을 감싸고 있게 됨 */}
+        <Layout />
+      </ProtectedRoute>
+    ),
     // children은 Oulet 자리에 들어가게 됨
     children: [
       {
