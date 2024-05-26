@@ -11,6 +11,7 @@ import {
   Title,
   Wrapper,
 } from "../components/auth-components";
+import GithubButton from "../components/github-btn";
 
 interface ErrorMessages {
   [key: string]: string;
@@ -101,6 +102,7 @@ export default function CreateAccount() {
       <Switcher>
         Already have an account? <Link to="/login">Log in &rarr</Link>
       </Switcher>
+      <GithubButton />
     </Wrapper>
   );
 }
