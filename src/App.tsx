@@ -56,10 +56,12 @@ const Wrapper = styled.div`
 
 function App() {
   const [isLoading, setLoading] = useState(true);
+  // Firebase 연결 함수
   const init = async () => {
     await auth.authStateReady();
     setLoading(false);
   };
+  // 앱 시작하면 Firebase에 연결
   useEffect(() => {
     init();
   }, []);
