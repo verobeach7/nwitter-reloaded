@@ -1,7 +1,8 @@
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import styled from "styled-components";
-import { auth, db } from "../firebase";
+import { auth, db, storage } from "../firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 const Form = styled.form`
   display: flex;
@@ -59,6 +60,7 @@ const SubmitBtn = styled.input`
 `;
 
 export default function PostTweetForm() {
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1mb
   const [isLoading, setLoading] = useState(false);
   const [tweet, setTweet] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -69,6 +71,10 @@ export default function PostTweetForm() {
     const { files } = e.target;
     // input에서 파일을 딱 하나만 받고 있는지 확인
     if (files && files.length === 1) {
+      if (files[0].size > MAX_FILE_SIZE) {
+        alert("File size must be under 1mb!");
+        return;
+      }
       setFile(files[0]);
     }
   };
@@ -78,8 +84,9 @@ export default function PostTweetForm() {
     if (!user || isLoading || tweet === "" || tweet.length > 180) return;
     try {
       setLoading(true);
+      /* 1. firestore database에 저장 */
       // addDoc(collection(firestore, "{collectionName}"),{data})
-      await addDoc(collection(db, "tweets"), {
+      const doc = await addDoc(collection(db, "tweets"), {
         tweet,
         createdAt: Date.now(),
         // user가 displayName을 설정하지 않았거나 비공개인 경우 "Anonymous"로 설정
@@ -87,6 +94,27 @@ export default function PostTweetForm() {
         // 이 tweet을 삭제하고자 할 때 현재 로그인한 유저와 tweet을 작성한 유저가 같은지 확인하기 위해 필요
         userId: user.uid,
       });
+      /* 2. file이 있다면 storage에 저장 */
+      // 파일 업로드를 위해 reference 생성
+      if (file) {
+        // ref(storage, 경로)
+        const locationRef = ref(
+          storage,
+          `tweets/${user.uid}-${user.displayName}/${doc.id}`
+        );
+        /* 3. 업로드 후 결과 받기 */
+        // uploadBytes 함수(경로, 파일); -> 업로드 결과를 반환
+        const result = await uploadBytes(locationRef, file);
+        /* 4. storage에 업로드 한 file의 download url 받기 */
+        // getDownloadURL 함수 -> result의 public URL을 반환
+        const url = await getDownloadURL(result.ref);
+        /* 5. download url을 이용하여 file의 경로를 firestore에 저장 */
+        await updateDoc(doc, {
+          photo: url,
+        });
+      }
+      setTweet("");
+      setFile(null);
     } catch (e) {
       console.log(e);
     } finally {
@@ -96,6 +124,7 @@ export default function PostTweetForm() {
   return (
     <Form onSubmit={onSubmit}>
       <TextArea
+        required
         rows={5}
         maxLength={180}
         onChange={onChange}
