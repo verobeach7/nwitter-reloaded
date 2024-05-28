@@ -73,6 +73,7 @@ export default function PostTweetForm() {
     if (files && files.length === 1) {
       if (files[0].size > MAX_FILE_SIZE) {
         alert("File size must be under 1mb!");
+        setFile(null);
         return;
       }
       setFile(files[0]);
