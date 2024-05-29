@@ -99,10 +99,7 @@ export default function PostTweetForm() {
       // 파일 업로드를 위해 reference 생성
       if (file) {
         // ref(storage, 경로)
-        const locationRef = ref(
-          storage,
-          `tweets/${user.uid}-${user.displayName}/${doc.id}`
-        );
+        const locationRef = ref(storage, `tweets/${user.uid}/${doc.id}`);
         /* 3. 업로드 후 결과 받기 */
         // uploadBytes 함수(경로, 파일); -> 업로드 결과를 반환
         const result = await uploadBytes(locationRef, file);
