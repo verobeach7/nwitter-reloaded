@@ -46,6 +46,9 @@ const AvatarInput = styled.input`
 
 const Name = styled.span`
   font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const Tweets = styled.div`
@@ -55,10 +58,43 @@ const Tweets = styled.div`
   gap: 10px;
 `;
 
+const Input = styled.input`
+  font-size: 22px;
+  padding: 5px;
+`;
+
+const EditButton = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  svg {
+    width: 30px;
+    height: 30px;
+  }
+`;
+
+interface IButton {
+  $isRed?: boolean;
+}
+
+const Button = styled.button<IButton>`
+  border: none;
+  background-color: ${(props) => (props.$isRed ? "tomato" : "#0984e3")};
+  color: white;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 5px;
+`;
+
 export default function Profile() {
   const user = auth.currentUser;
   const [avatar, setAvatar] = useState(user?.photoURL);
   const [tweets, setTweets] = useState<ITweet[]>([]);
+  const [editMode, setEditMode] = useState(false);
+  const [editValue, setEditValue] = useState(user?.displayName);
+  const [lastValue, setLastValue] = useState(user?.displayName);
+  const [nameLoading, setNameLoading] = useState(false);
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
     if (!user) return;
@@ -97,6 +133,29 @@ export default function Profile() {
   useEffect(() => {
     fetchTweets();
   }, []);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditValue(e.target.value);
+  };
+  const onEdit = () => {
+    setEditMode(true);
+  };
+  const onCancel = () => {
+    setEditValue(lastValue);
+    setEditMode(false);
+  };
+  const onSave = async () => {
+    if (nameLoading || !editValue || !user) return;
+    try {
+      setNameLoading(true);
+      await updateProfile(user, { displayName: editValue });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setNameLoading(false);
+      setEditMode(false);
+      setLastValue(editValue);
+    }
+  };
   return (
     <Wrapper>
       <AvatarUpload htmlFor="avatar">
@@ -124,7 +183,45 @@ export default function Profile() {
         accept="image/*"
       />
       {/* <Name>{user.displayName ? user?.uid : "Anonymous"}</Name> */}
-      <Name>{user?.displayName ?? "Anonymous"}</Name>
+      <Name>
+        {editMode ? (
+          <Input
+            value={editValue ?? ""}
+            onChange={onChange}
+            placeholder="새로운 이름을 입력해 주세요."
+            required
+          />
+        ) : (
+          user?.displayName ?? "Anonymous"
+        )}
+        {editMode ? (
+          <>
+            <Button $isRed={true} onClick={onCancel}>
+              취소
+            </Button>
+            <Button onClick={onSave}>
+              {nameLoading ? "저장 중.." : "저장"}
+            </Button>
+          </>
+        ) : (
+          <EditButton onClick={onEdit}>
+            <svg
+              fill="none"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+              />
+            </svg>
+          </EditButton>
+        )}
+      </Name>
       <Tweets>
         {tweets.map((tweet) => (
           <Tweet key={tweet.id} {...tweet} />
