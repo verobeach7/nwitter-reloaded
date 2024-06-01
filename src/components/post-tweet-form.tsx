@@ -60,7 +60,7 @@ const SubmitBtn = styled.input`
 `;
 
 export default function PostTweetForm() {
-  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1mb
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 1mb
   const [isLoading, setLoading] = useState(false);
   const [tweet, setTweet] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -72,7 +72,7 @@ export default function PostTweetForm() {
     // input에서 파일을 딱 하나만 받고 있는지 확인
     if (files && files.length === 1) {
       if (files[0].size > MAX_FILE_SIZE) {
-        alert("File size must be under 1mb!");
+        alert("File size must be under 2mb!");
         setFile(null);
         return;
       }
